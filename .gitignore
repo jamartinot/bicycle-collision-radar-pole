@@ -1,0 +1,124 @@
+# # macOS
+# .DS_Store
+# .AppleDouble
+# .LSOverride
+
+# # Directory metadata
+# .directory
+
+# # Temporary files
+# *~
+# *.swp
+# *.swo
+# *.bak
+# *.tmp
+
+# # Log files
+# *.log
+
+# # Build artifacts and directories
+# **/build/
+# build/
+# *.o
+# *.a
+# *.out
+# *.exe # For any host-side utilities compiled on Windows
+
+# # ESP-IDF specific build outputs
+# *.bin
+# *.elf
+# *.map
+# flasher_args.json # Generated in build directory
+# sdkconfig.old
+# sdkconfig
+
+# # ESP-IDF dependencies
+# # For older versions or manual component management
+# /components/.idf/
+# **/components/.idf/
+# # For modern ESP-IDF component manager
+# managed_components/
+# # If ESP-IDF tools are installed/referenced locally to the project
+# .espressif/
+
+# # CMake generated files
+# CMakeCache.txt
+# CMakeFiles/
+# cmake_install.cmake
+# install_manifest.txt
+# CTestTestfile.cmake
+
+# # Python environment files
+# *.pyc
+# *.pyo
+# *.pyd
+# __pycache__/
+# *.egg-info/
+# dist/
+
+# # Virtual environment folders
+# venv/
+# .venv/
+# env/
+
+# # Language Servers
+# .clangd/
+# .ccls-cache/
+# compile_commands.json
+
+# # Windows specific
+# Thumbs.db
+# ehthumbs.db
+# Desktop.ini
+
+# # User-specific configuration files
+# *.user
+# *.workspace # General workspace files, can be from various tools
+# *.suo       # Visual Studio Solution User Options
+# *.sln.docstates # Visual Studio
+
+# *
+# # But not these files
+# !CMakeLists.txt
+# !.gitignore
+# !README.md
+# !Kconfig.projbuild
+# !idf_component.yml
+
+# # Hardware Configuration
+# !sdkconfig.defaults.esp32s3
+
+# # Recursively include source and header files
+# !**/*.c
+# !**/*.h
+# !**/*.py
+# !**/*.cpp
+
+# # Don't ignore the directory structure itself
+# !**/
+
+# 1. Ignore the big junk folders entirely
+build/
+managed_components/
+dependencies.lock
+sdkconfig
+.vscode/
+.devcontainer/
+
+# 2. Ignore temporary/user files
+*.user
+*.suo
+*.pyc
+
+
+# Ignore all chip-specific defaults except yours
+sdkconfig.defaults.esp32
+sdkconfig.defaults.esp32c*
+sdkconfig.defaults.esp32h*
+sdkconfig.defaults.esp32p*
+sdkconfig.defaults.esp32s2
+
+# Ignore temporary/backup files
+sdkconfig
+sdkconfig.old
+*.old
