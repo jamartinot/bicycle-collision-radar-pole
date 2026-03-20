@@ -13,8 +13,8 @@
 #define BLINK_PIN GPIO_NUM_5
 #define SOLID_PIN GPIO_NUM_6
 
-#define COOLDOWNTIME 5.0f // Seconds
-#define JUMP_SCARE_TIME 5.0f // Seconds
+#define COOLDOWNTIME 4.0f // Seconds
+#define JUMP_SCARE_TIME 3.0f // Seconds
 
 void app_main(void) {
     // 1. Setup UART for TF-Mini Plus (115200 Baud)
@@ -55,27 +55,31 @@ void app_main(void) {
         int len = uart_read_bytes(UART_PORT, data, 9, 20 / portTICK_PERIOD_MS);
         int64_t current_time = esp_timer_get_time();
 
-        if (len == 9 && data[0] == 0x59 && data[1] == 0x59) {
+        if (len == 9 && data[0] == 0x59 && data[1] == 0x59) { // Valid data frame received
             
-            float distance = (float)(data[2] + (data[3] << 8)); 
+            float distance = (float)(data[2] + (data[3] << 8));  // Distance in cm
             
-            if (current_time - prev_calc_time >= 100000) { 
+            // Print the raw distance every 50th valid cycle
+            static int cycle_count = 0; // Only print every 40 cycles to avoid flooding the console
+            if (cycle_count % 30 == 0) { 
+                printf("Distance: %.0f cm\n", distance);
+            }
+            cycle_count++; // Increment cycle count for periodic logging
+            if (cycle_count >= 1000) { // Reset cycle count after a while to prevent overflow
+                cycle_count = 0;
+            }
+
+            if (current_time - prev_calc_time >= 100000) {  // Process every 100ms (10Hz)
                 bool collision_danger = false;
 
                 // Ensure distance is valid
-                if (distance > 0 && distance < 1200) {
+                if (distance > 0 && distance < 1200) {   // Valid range: 0.1m to 12m
                     
-                    float delta_distance = prev_distance - distance; 
-                    float abs_delta = (delta_distance > 0) ? delta_distance : -delta_distance;
-
-                    // Continuity Filter: A jump > 60cm in 100ms means it's a new object
-                    bool is_same_object = (prev_distance > 0 && abs_delta <= 60.0f);
-
-                    // --- THE 3-METER MAXIMUM LIMIT ---
-                    if (distance <= 300.0f) {
+                    // --- THE 6-METER MAXIMUM LIMIT ---
+                    if (distance <= 600.0f) {   // Only consider objects within 6 meters
 
                         // RULE 1: The 3-Second Jump Scare (< 50cm)
-                        if (distance <= 50.0f) {
+                        if (distance <= 50.0f) { 
                             if (!was_in_proximity) {
                                 was_in_proximity = true;
                                 proximity_start_time = current_time; // Start the 3s clock
@@ -90,35 +94,32 @@ void app_main(void) {
                         }
 
                         // RULE 2: Time-To-Collision (Normal Movement)
-                        // Only trigger if tracking the same object
-                        if (is_same_object) {
-                            float dt = (current_time - prev_calc_time) / 1000000.0f; 
-                            float approach_speed = delta_distance / dt;  
+                        if (prev_distance > 0) { // Calculate approach speed if we have a past reading
+                            float dt = (current_time - prev_calc_time) / 1000000.0f; // dt should be ~0.1s
+                            float approach_speed = (prev_distance - distance) / dt;  
                             
-                            // Noise filter: ignore slow sensor drift (< 10 cm/s)
-                            if (approach_speed > 10.0f) {
-                                float time_to_collision = distance / approach_speed; 
-                                
-                                if (time_to_collision < 2.0f) {
+                            // Check if object is approaching 
+                            if (approach_speed > 0.0f) { 
+                                float time_to_collision = distance / approach_speed;
+
+                                // ignore if object teleports or is faster than 30kph (833 cm/s)
+                                if (approach_speed > 833.0f) {
+                                    printf("Ignoring unrealistic approach speed: %.0f cm/s\n", approach_speed);  
+                                } else if (time_to_collision < 2.0f) { // Imminent collision within 2 seconds
                                     collision_danger = true;
                                     printf("TTC DANGER! Dist: %.0f cm, Speed: %.0f cm/s\n", distance, approach_speed);
                                 }
                             }
                         }
                     } else {
-                        // Object is > 300cm. Reset proximity state.
+                        // Object is > 600cm. Reset proximity state.
                         was_in_proximity = false; 
-                    }
-                    
-                    // DEBUG: Log when the sensor switches to a new object
-                    if (prev_distance > 0 && abs_delta > 60.0f) {
-                        printf("Track Lost. Switched to new object at %.0f cm\n", distance);
                     }
                 } else {
                     was_in_proximity = false; // Reset if sensor reads 0 (error/lost)
                 }
 
-                // --- ALARM STATE MACHINE (1-Second Cooldown) ---
+                // --- ALARM STATE MACHINE (Cooldown) ---
                 if (collision_danger) {
                     alarm_active = true;
                     is_safe = false; 
@@ -141,7 +142,7 @@ void app_main(void) {
                 prev_calc_time = current_time;
             }
         } else {
-            // No valid sensor data received. Still handle the 1s cooldown timer.
+            // No valid sensor data received. Still handle the cooldown timer.
             int64_t current_time = esp_timer_get_time();
             if (!is_safe) {
                 is_safe = true;
