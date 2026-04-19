@@ -124,7 +124,7 @@ The current hardware prototype consists of:
 - 5v Led strip for blinking warning output,(audio output can be added in parallel in the future)
 ## Wiring diagram
 protoptype wiring diagram for the TF-Mini Plus LiDAR and GPIO outputs:
-![wiring diagram](Notes_260419_174151_2.jpg)
+![wiring diagram](pictures/Notes_260419_174151_2.jpg)
 picture 1, wiring diagram
 
 ## Functional prototype photos
