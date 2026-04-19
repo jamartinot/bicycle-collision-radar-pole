@@ -139,12 +139,18 @@ picture 4, COB LED cutout cob led, heasink, coling fan and step-up are inside ca
 
 ![lidar](pictures/20260419_163845.jpg)
 picture 5, TF-Mini Plus LiDAR
-TF-Mini Plus LiDAR is mounted on the top of the box to provide a clear line of sight for distance measurements. It is connected to the ESP32 via UART for real-time data acquisition. cutout was already in filament box.
+TF-Mini Plus LiDAR is mounted on the side of box to provide a clear line of sight for distance measurements. It is connected to the ESP32 via UART for real-time data acquisition. cutout was already in filament box.
 
 ![switch](pictures/Screenshot_20260419_235752_Gallery.jpg)
 picture 6, switch for tuning the system on and off, maximun continous current of the switch is 6A, which is 14.4v*6A=86.4W, which is enough for the prototype, since the COB LED is 100W but we will run it at around 60% brightness to stay within the limits of the switch and thermals.
 
-## Project vision and next steps
+![text](<pictures/WhatsApp Image 2026-03-15 at 18.48.20 (1).jpeg>) 
+picture 7, thermal testing. 
+
+![text](<pictures/WhatsApp Image 2026-03-15 at 18.48.20.jpeg>)
+picture 8, thermal testing. COB LED temperature at continuous load. surface temperature stabilizes at 126°C, which is too high for long-term reliability. at 60% brightness, for short demo purpose, its fine as it will not be  on for long time, but for more robust implementations, better cooling solutions should be considered, such as larger heatsinks, active cooling with fans, or even liquid cooling if necessary.
+
+## Next steps
 
 The broader CAI concept targets right-hook conflict prevention at intersections by combining:
 
