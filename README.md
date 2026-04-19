@@ -128,20 +128,20 @@ protoptype wiring diagram for the TF-Mini Plus LiDAR and GPIO outputs:
 picture 1, wiring diagram
 
 ## Functional prototype photos
-![wiring](20260419_163823.jpg)
+![wiring](pictures/20260419_163823.jpg)
 picture 2, wiring of the prototype
 Everything is placed inside cardboard box for demo purposes. Carboard is easy to work with and provides a good platform to realize layout of electronics for more robust implementations. Box used is old filament box.
-![esp32](20260419_165656.jpg)
+![esp32](pictures/20260419_165656.jpg)
 picture 3, ESP32-S3-DevKitC-1 development board
 Heart of the prototype is the ESP32-S3-DevKitC-1 development board, which provides the processing power and GPIO interfaces for the system. Wiring is build on a breadboard for easy prototyping and testing. Connections are glued with hot glue to secure them in place for field testing. And for easy removal when need to update hardware.
-![cobcutout](20260419_163902.jpg)
+![cobcutout](pictures/20260419_163902.jpg)
 picture 4, COB LED cutout cob led, heasink, coling fan and step-up are inside cardboard box. Cutout is made for the COB LED.
 
-![lidar](20260419_163845.jpg)
+![lidar](pictures/20260419_163845.jpg)
 picture 5, TF-Mini Plus LiDAR
 TF-Mini Plus LiDAR is mounted on the top of the box to provide a clear line of sight for distance measurements. It is connected to the ESP32 via UART for real-time data acquisition. cutout was already in filament box.
 
-![switch](Screenshot_20260419_235752_Gallery.jpg)
+![switch](pictures/Screenshot_20260419_235752_Gallery.jpg)
 picture 6, switch for tuning the system on and off, maximun continous current of the switch is 6A, which is 14.4v*6A=86.4W, which is enough for the prototype, since the COB LED is 100W but we will run it at around 60% brightness to stay within the limits of the switch and thermals.
 
 ## Project vision and next steps
