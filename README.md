@@ -1,69 +1,155 @@
-| Supported Targets | ESP32 | ESP32-C2 | ESP32-C3 | ESP32-C5 | ESP32-C6 | ESP32-C61 | ESP32-H2 | ESP32-H21 | ESP32-P4 | ESP32-S2 | ESP32-S3 |
-| ----------------- | ----- | -------- | -------- | -------- | -------- | --------- | -------- | --------- | -------- | -------- | -------- |
+# CAI Collision Awareness Indicator (ESP-IDF Prototype)
 
-# Blink Example
+This repository contains the embedded prototype for the CAI (Collision Awareness Indicator) concept: a pole-mounted traffic safety system that detects near-collision risk and triggers a visual warning.
+THis project is build on blink example of ESP-IDF, which is a simple template for ESP32 projects. The code is organized in a single main file for simplicity, but can be refactored into multiple files and modules as needed.
 
-(See the README.md file in the upper level 'examples' directory for more information about examples.)
 
-This example demonstrates how to blink a LED by using the GPIO driver or using the [led_strip](https://components.espressif.com/component/espressif/led_strip) library if the LED is addressable e.g. [WS2812](https://cdn-shop.adafruit.com/datasheets/WS2812B.pdf). The `led_strip` library is installed via [component manager](main/idf_component.yml).
+## What this firmware does (2026-04-19)
 
-## How to Use Example
+Current firmware in `main/blink_example_main.c` implements a real-time proximity and collision-risk warning loop using a TF-Mini Plus LiDAR over UART.
 
-Before project configuration and build, be sure to set the correct chip target using `idf.py set-target <chip_name>`.
+It:
 
-### Hardware Required
+- reads TF-Mini frames at 115200 baud on UART2
+- computes approach speed and time-to-collision (TTC)
+- triggers alarm output when danger conditions are met
+- keeps alarm active with a cooldown timer to avoid rapid flicker
+- drives two GPIO outputs (one solid warning output and one blinking warning output)
 
-* A development board with normal LED or addressable LED on-board (e.g., ESP32-S3-DevKitC, ESP32-C6-DevKitC etc.)
-* A USB cable for Power supply and programming
+The logic includes two trigger modes:
 
-See [Development Boards](https://www.espressif.com/en/products/devkits) for more information about it.
+1. Immediate near-proximity mode ("jump scare") when object is <= 50 cm (for up to 3 s in-zone).
+2. TTC mode when estimated time to collision drops below 2.0 s.
 
-### Configure the Project
+## Hardware and pin mapping
 
-Open the project configuration menu (`idf.py menuconfig`).
+Defined in `main/blink_example_main.c`:
 
-In the `Example Configuration` menu:
+- TF-Mini UART TX pin: GPIO12 (`TXD_PIN`)
+- TF-Mini UART RX pin: GPIO13 (`RXD_PIN`)
+- UART port: `UART_NUM_2`
+- Blinking warning output: GPIO5 (`BLINK_PIN`)
+- Solid warning output: GPIO6 (`SOLID_PIN`)
 
-* Select the LED type in the `Blink LED type` option.
-  * Use `GPIO` for regular LED
-  * Use `LED strip` for addressable LED
-* If the LED type is `LED strip`, select the backend peripheral
-  * `RMT` is only available for ESP targets with RMT peripheral supported
-  * `SPI` is available for all ESP targets
-* Set the GPIO number used for the signal in the `Blink GPIO number` option.
-* Set the blinking period in the `Blink period in ms` option.
+Thresholds and timing:
 
-### Build and Flash
+- max tracked distance: 600 cm
+- valid sensor range accepted: 1 to 1199 cm
+- TTC danger threshold: < 2.0 s
+- cooldown time: 4.0 s
+- proximity window: <= 50 cm
+- proximity timeout: 3.0 s
 
-Run `idf.py -p PORT flash monitor` to build, flash and monitor the project.
+## Build and flash (ESP-IDF)
+You can build and flash the firmware using ESP-IDF tools either visual Studio Code extension or command line.
 
-(To exit the serial monitor, type ``Ctrl-]``.)
+From the repository root:
 
-See the [Getting Started Guide](https://docs.espressif.com/projects/esp-idf/en/latest/get-started/index.html) for full steps to configure and use ESP-IDF to build projects.
-
-## Example Output
-
-As you run the example, you will see the LED blinking, according to the previously defined period. For the addressable LED, you can also change the LED color by setting the `led_strip_set_pixel(led_strip, 0, 16, 16, 16);` (LED Strip, Pixel Number, Red, Green, Blue) with values from 0 to 255 in the [source file](main/blink_example_main.c).
-
-```text
-I (315) example: Example configured to blink addressable LED!
-I (325) example: Turning the LED OFF!
-I (1325) example: Turning the LED ON!
-I (2325) example: Turning the LED OFF!
-I (3325) example: Turning the LED ON!
-I (4325) example: Turning the LED OFF!
-I (5325) example: Turning the LED ON!
-I (6325) example: Turning the LED OFF!
-I (7325) example: Turning the LED ON!
-I (8325) example: Turning the LED OFF!
+```bash
+idf.py set-target esp32s3
+idf.py build
+idf.py -p <PORT> flash monitor
 ```
 
-Note: The color order could be different according to the LED model.
+Example port on Windows:
 
-The pixel number indicates the pixel position in the LED strip. For a single LED, use 0.
+```bash
+idf.py -p COM4 flash monitor
+```
 
-## Troubleshooting
+## Serial output
 
-* If the LED isn't blinking, check the GPIO or the LED type selection in the `Example Configuration` menu.
+The firmware prints periodic distance logs and danger events such as TTC warnings.
 
-For any technical queries, please open an [issue](https://github.com/espressif/esp-idf/issues) on GitHub. We will get back to you soon.
+Typical messages include:
+
+- `Distance: <n> cm`
+- `TTC DANGER! Dist: <n> cm, Speed: <n> cm/s`
+- `Ignoring unrealistic approach speed: <n> cm/s`
+
+
+```
+Distance: 39 cm
+Distance: 166 cm
+Ignoring unrealistic approach speed: 1129 cm/s
+Distance: 53 cm
+Distance: 55 cm
+Distance: 55 cm
+Distance: 56 cm
+Distance: 49 cm
+TTC DANGER! Dist: 49 cm, Speed: 39 cm/s
+Distance: 146 cm
+TTC DANGER! Dist: 130 cm, Speed: 156 cm/s
+TTC DANGER! Dist: 107 cm, Speed: 224 cm/s
+Distance: 105 cm
+Distance: 154 cm
+Distance: 156 cm
+Distance: 155 cm
+Distance: 155 cm
+Distance: 154 cm
+Distance: 152 cm
+```
+
+## Optional plotting utility
+
+`main/serial_plotter.py` provides a live serial distance plot using `pyqtgraph` and `pyserial`.
+
+Update the serial port in the script if needed:
+
+- `COM_PORT = 'COM4'`
+
+Install dependencies:
+
+```bash
+pip install pyqtgraph pyserial pyqt5
+```
+
+Run:
+
+```bash
+python main/serial_plotter.py
+```
+
+
+# Hardware prototype
+The current hardware prototype consists of:
+- ESP32-S3-DevKitC-1 development board for the main controller and processing unit
+- TF-Mini Plus LiDAR for distance measurement and collision risk estimation
+- Breadboard and jumper wires for GPIO connections
+- 4s 21700 lion battery pack for portable power
+- usb c step-down power module to convert battery voltage to 5V for the ESP32, relays, 5v LED strip and TF-Mini Plus
+- switch for tuning the system on and off
+- 100w cop led with adjustable step-up driver for the visual warning output
+- two 5v relay modules for controlling the LED warning output
+- 5v Led strip for blinking warning output,(audio output can be added in parallel in the future)
+## Wiring diagram
+protoptype wiring diagram for the TF-Mini Plus LiDAR and GPIO outputs:
+![wiring diagram](Notes_260419_174151_2.jpg)
+picture 1, wiring diagram
+
+## Functional prototype photos
+![wiring](20260419_163823.jpg)
+picture 2, wiring of the prototype
+Everything is placed inside cardboard box for demo purposes. Carboard is easy to work with and provides a good platform to realize layout of electronics for more robust implementations. Box used is old filament box.
+![esp32](20260419_165656.jpg)
+picture 3, ESP32-S3-DevKitC-1 development board
+Heart of the prototype is the ESP32-S3-DevKitC-1 development board, which provides the processing power and GPIO interfaces for the system. Wiring is build on a breadboard for easy prototyping and testing. Connections are glued with hot glue to secure them in place for field testing. And for easy removal when need to update hardware.
+![cobcutout](20260419_163902.jpg)
+picture 4, COB LED cutout cob led, heasink, coling fan and step-up are inside cardboard box. Cutout is made for the COB LED.
+
+![lidar](20260419_163845.jpg)
+picture 5, TF-Mini Plus LiDAR
+TF-Mini Plus LiDAR is mounted on the top of the box to provide a clear line of sight for distance measurements. It is connected to the ESP32 via UART for real-time data acquisition. cutout was already in filament box.
+
+![switch](Screenshot_20260419_235752_Gallery.jpg)
+picture 6, switch for tuning the system on and off, maximun continous current of the switch is 6A, which is 14.4v*6A=86.4W, which is enough for the prototype, since the COB LED is 100W but we will run it at around 60% brightness to stay within the limits of the switch and thermals.
+
+## Project vision and next steps
+
+The broader CAI concept targets right-hook conflict prevention at intersections by combining:
+
+- pole-mounted sensing (RGB + IR in concept)
+- on-device collision prediction
+- immediate crossing illumination warning
+
+This repository currently hosts the embedded warning prototype and ESP-IDF project scaffolding for iterative field testing.
